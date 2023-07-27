@@ -67,6 +67,11 @@ class PID:
 
         self.integral += error * dt
 
+        if abs(self.integral) > self.integral_limit:
+            self.integral = np.clip(
+                self.integral, -self.integral_limit, self.integral_limit
+            )
+
         return self.integral
 
     def _get_derivative(self, error, dt):

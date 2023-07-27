@@ -76,27 +76,53 @@ def main():
     desired_heading_deg = float(input("Enter target heading: "))
 
     # TODO: convert heading to radians
-    desired_heading = None
+    desired_heading = np.deg2rad(desired_heading_deg) % (2 * np.pi)
 
-    pid = PID(0.5, 0.0, 10.0, 100)
+    pid = PID(30.0, 0.1, 15.0, 100)
 
+    count = 0
+    frequency = 10
     while True:
         # get yaw from the vehicle
         msg = mav.recv_match(type="ATTITUDE", blocking=True)
         yaw = msg.yaw
         yaw_rate = msg.yawspeed
 
-        print("Heading: ", np.rad2deg(yaw))
+        yaw = yaw % (2 * np.pi)
 
         # calculate error
         error = desired_heading - yaw
-        print("Error: ", np.rad2deg(error))
+
+        # Implementation by manipulating the sign of the raw error
+        error *= -1
+
+        if abs(error) >= np.pi:
+            if error >= 0:
+                error = -(2 * np.pi - error)
+            else:
+                error = 2 * np.pi + error
+
+        # Implementation by mapping to sine
+
+        # error = error % (2 * np.pi) - np.pi
+        # if error > np.pi / 2:
+        #     error = 1
+        # elif error < - np.pi / 2:
+        #     error = -1
+        # else:
+        #     error = np.sin(error)
 
         output = pid.update(error, error_derivative=yaw_rate)
-        print("Output: ", output)
+
+        if (count % frequency) == 0:
+            print("Heading: ", np.rad2deg(yaw))
+            print("Transformed Error: ", np.rad2deg(error))
+            print("Output: ", output)
 
         # set vertical power
         set_rotation_power(mav, -output)
+
+        count += 1
 
 
 if __name__ == "__main__":
