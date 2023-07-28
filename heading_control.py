@@ -81,7 +81,7 @@ def main():
     pid = PID(30.0, 0.1, 15.0, 100)
 
     count = 0
-    frequency = 10
+    frequency = 5
     while True:
         # get yaw from the vehicle
         msg = mav.recv_match(type="ATTITUDE", blocking=True)
@@ -94,23 +94,25 @@ def main():
         error = desired_heading - yaw
 
         # Implementation by manipulating the sign of the raw error
-        error *= -1
 
-        if abs(error) >= np.pi:
-            if error >= 0:
-                error = -(2 * np.pi - error)
-            else:
-                error = 2 * np.pi + error
+        # error *= -1
+
+        # if abs(error) >= np.pi:
+        #     if error >= 0:
+        #         error = -(2 * np.pi - error)
+        #     else:
+        #         error = 2 * np.pi + error
 
         # Implementation by mapping to sine
 
-        # error = error % (2 * np.pi) - np.pi
-        # if error > np.pi / 2:
-        #     error = 1
-        # elif error < - np.pi / 2:
-        #     error = -1
-        # else:
-        #     error = np.sin(error)
+        error = error % (2 * np.pi) - np.pi
+        
+        if error > np.pi / 2:
+            error = 1
+        elif error < - np.pi / 2:
+            error = -1
+        else:
+            error = np.sin(error)
 
         output = pid.update(error, error_derivative=yaw_rate)
 
